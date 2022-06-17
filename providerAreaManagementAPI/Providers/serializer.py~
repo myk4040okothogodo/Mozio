@@ -1,0 +1,50 @@
+from django.contrib.auth import get_user_model 
+from rest_framework import serializers
+from .models import Provider,ProviderProfile
+
+Provider = get_user_model()
+
+
+class ProviderProfileSerializer(serializers.ModelSerializer): 
+
+    class Meta:
+        model = ProviderProfile
+        fields = ['profile_picture','dob','language','phone','country_code','currency']
+
+
+
+class ProviderSerializer(serializers.ModelSerializer):
+    links = serializers.SerializerMethodField('get_links')
+    profile = ProviderProfileSerializer(required=True)
+    class Meta:
+        model =  Provider
+        fields =  ['id','first_name','last_name',Provider.USERNAME_FIELD,'profile','links']
+
+    def get_links(self, obj):
+        request = self.context['request']
+        username = obj.get_username()
+        return {}
+
+
+
+
+    def create(self, validated_data):
+        profile_data = validated_data.pop('profile')
+        provider = Provider.objects.create(**validated_data)
+        ProviderProfile.objects.create(provider=provider, **profile_data)
+        return provider
+           
+    """
+    def update(self, instance, validated_data):
+        #handle related objects
+        for related_obj_name in self.Meta.related_fields:
+            #Validated data will show the nested structure
+            data = validated_data.pop(related_obj_name)
+
+            #same as default update implementation
+            for attr_name,value in data.items():
+                setattr(related_instance, attr_name, value)
+            related_instance.save()
+        return
+    """
+
